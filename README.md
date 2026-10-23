@@ -100,6 +100,14 @@ Full-HD uploads. SPYPOINT describes [requesting a
 Full-HD upload](https://www.spypoint.com/ca/en/support/article-detail?folder=hdPhotoAndVideoPackages&id=s131&topic=how-to-request-a-full-hd-photos-and-videos)
 as a separate action in its app or web gallery.
 
+To archive only photos tagged as bucks by SPYPOINT, set `SPYPOINT_TAGS=buck` in
+`.env` (or as an environment variable in Unraid). The archive asks the API for
+that tag and checks each returned photo's tags before downloading. With the
+setting unset, it archives all photos. The filter uses SPYPOINT's assigned tag;
+photos without that tag are skipped even if they visibly contain a buck.
+Changing the filter triggers a full metadata scan so earlier matching photos
+are not missed. Saved files are retained when the filter changes.
+
 ### Poll for new photos
 
 The first uncapped run scans all photo history available through the API. After
@@ -149,12 +157,12 @@ Add a container in Unraid's Docker page with these settings:
 
 | Setting | Value |
 | --- | --- |
-| Repository | `jankar/pyspypoint:0.1.0` ([Docker Hub](https://hub.docker.com/r/jankar/pyspypoint)) |
+| Repository | `jankar/pyspypoint:0.2.0` ([Docker Hub](https://hub.docker.com/r/jankar/pyspypoint)) |
 | Network | Bridge; no port mappings |
 | Host path | `/mnt/user/appdata/pyspypoint/archive` |
 | Container path | `/archive` (read/write) |
 | Environment | `SPYPOINT_USERNAME`, `SPYPOINT_PASSWORD` |
-| Optional environment | `SPYPOINT_POLL_HOURS=6`, `SPYPOINT_LOOKBACK_DAYS=7`, `SPYPOINT_FULL_SCAN_DAYS=30` |
+| Optional environment | `SPYPOINT_TAGS=buck`, `SPYPOINT_POLL_HOURS=6`, `SPYPOINT_LOOKBACK_DAYS=7`, `SPYPOINT_FULL_SCAN_DAYS=30` |
 
 Create the host directory first and give the container's user write access.
 For an Unraid share owned by `nobody:users`, set **Extra Parameters** to
@@ -163,7 +171,7 @@ archive immediately, and keeps the checkpoint in `/archive/_state.json`. Set
 the container to auto-start to resume polling after a reboot. The initial
 uncapped run can download the whole history currently exposed by SPYPOINT.
 The published image currently targets Linux x86-64, which is the usual Unraid
-platform. The `latest` tag points to the same image as `0.1.0`.
+platform. The `latest` tag points to the same image as `0.2.0`.
 
 Unraid supports these volume and environment mappings in its [container
 settings](https://docs.unraid.net/unraid-os/using-unraid-to/run-docker-containers/managing-and-customizing-containers/).

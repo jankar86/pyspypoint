@@ -177,7 +177,7 @@ def archive_photo(client, photo, root):
     return downloaded
 
 
-def run(client, root, page_size, max_photos, cutoff=None, cameras=None):
+def run(client, root, page_size, max_photos, cutoff=None, cameras=None, tags=()):
     if cameras is None:
         cameras = client.cameras()
     print(f"Cameras: {len(cameras)}")
@@ -186,14 +186,18 @@ def run(client, root, page_size, max_photos, cutoff=None, cameras=None):
     root.mkdir(parents=True, exist_ok=True)
     cursor = "2100-01-01T00:00:00.000Z"
     seen = set()
+    requested_tags = set(tags)
     downloaded = skipped = errors = 0
     while True:
-        photos = client.photos(cameras, date_end=cursor, limit=page_size)
+        photos = client.photos(cameras, date_end=cursor, limit=page_size, tags=tags)
         if not photos:
             break
         oldest = min(photo.originDate for photo in photos)
         for photo in photos:
             if cutoff and photo.originDate < cutoff:
+                continue
+            if requested_tags and requested_tags.isdisjoint(
+                    getattr(photo, "tag", ()) or ()):
                 continue
             if photo.id in seen:
                 continue
@@ -241,14 +245,15 @@ def load_state(path):
 
 
 def sync(client, root, page_size, max_photos, lookback_days,
-         full_scan_days, force_full=False, now=None):
+         full_scan_days, force_full=False, now=None, tags=()):
     root.mkdir(parents=True, exist_ok=True)
     now = now or datetime.now(timezone.utc)
     state_path = root / "_state.json"
     state = load_state(state_path)
     cameras = client.cameras()
     camera_ids = sorted(camera.id for camera in cameras)
-    full = force_full or state is None or state["camera_ids"] != camera_ids
+    full = (force_full or state is None or state["camera_ids"] != camera_ids
+            or state.get("tags", []) != list(tags))
     if state and not full:
         last_full = utc_timestamp(state["last_full_scan_at"])
         last_success = utc_timestamp(state["last_success_at"])
@@ -256,13 +261,15 @@ def sync(client, root, page_size, max_photos, lookback_days,
                 now - last_full >= timedelta(days=full_scan_days))
     cutoff = None if full else iso_timestamp(last_success - timedelta(days=lookback_days))
     print("Scan: full" if full else f"Scan: recent photos since {cutoff}")
-    result = run(client, root, page_size, max_photos, cutoff=cutoff, cameras=cameras)
+    result = run(client, root, page_size, max_photos, cutoff=cutoff,
+                 cameras=cameras, tags=tags)
     if result == 0 and max_photos == 0:
         write_json(state_path, {
             "version": 1,
             "last_success_at": iso_timestamp(now),
             "last_full_scan_at": iso_timestamp(now) if full else state["last_full_scan_at"],
             "camera_ids": camera_ids,
+            "tags": list(tags),
         })
     return result
 
@@ -281,9 +288,11 @@ def main():
         lookback_days = positive_int("SPYPOINT_LOOKBACK_DAYS", 7)
         full_scan_days = positive_int("SPYPOINT_FULL_SCAN_DAYS", 30)
         force_full = os.getenv("SPYPOINT_FULL_SCAN", "0") == "1"
+        tags = tuple(sorted({tag.strip().lower() for tag in
+                             os.getenv("SPYPOINT_TAGS", "").split(",") if tag.strip()}))
         root = Path(os.getenv("SPYPOINT_ARCHIVE_DIR", "/archive"))
         return sync(spypoint.Client(username, password), root, page_size, max_photos,
-                    lookback_days, full_scan_days, force_full)
+                    lookback_days, full_scan_days, force_full, tags=tags)
     except (OSError, ValueError, spypoint.SpypointException) as exc:
         print(f"Archive failed: {exc}", file=sys.stderr)
         return 1

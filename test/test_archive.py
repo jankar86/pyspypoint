@@ -45,9 +45,10 @@ class FakeClient:
     def cameras(self):
         return [spypoint.Camera(camera_id) for camera_id in self.camera_ids]
 
-    def photos(self, cameras, date_end, limit):
+    def photos(self, cameras, date_end, limit, tags=()):
         self.photo_calls += 1
-        return [p for p in self.items if p.originDate < date_end][:limit]
+        return [p for p in self.items if p.originDate < date_end
+                and (not tags or not set(tags).isdisjoint(p.tag))][:limit]
 
 
 def photo(number):
@@ -135,3 +136,33 @@ class TestArchive(unittest.TestCase):
             with contextlib.redirect_stdout(io.StringIO()):
                 self.assertEqual(0, archive.sync(client, root, 2, 1, 7, 30))
             self.assertFalse((root / "_state.json").exists())
+
+    def test_tag_filter_and_checkpoint_change(self):
+        items = [photo(3), photo(2), photo(1)]
+        items[0].tag = ("buck",)
+        items[1].tag = ("deer",)
+        items[2].tag = ("buck",)
+        client = FakeClient(items)
+        now = datetime(2026, 10, 24, tzinfo=timezone.utc)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(0, archive.sync(client, root, 3, 0, 7, 30,
+                                                 now=now, tags=("buck",)))
+            self.assertEqual(2, len(client.session.downloads))
+            self.assertFalse((root / "camera-1" / "photo-2.json").exists())
+            self.assertEqual(["buck"], json.loads((root / "_state.json").read_text())["tags"])
+
+            client.photo_calls = 0
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(0, archive.sync(client, root, 3, 0, 7, 30,
+                                                 now=now + timedelta(hours=1),
+                                                 tags=("buck",)))
+            self.assertEqual(1, client.photo_calls)
+
+            client.photo_calls = 0
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(0, archive.sync(client, root, 3, 0, 7, 30,
+                                                 now=now + timedelta(hours=2)))
+            self.assertGreater(client.photo_calls, 1)
+            self.assertEqual(3, len(client.session.downloads))

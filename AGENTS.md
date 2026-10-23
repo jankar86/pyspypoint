@@ -31,21 +31,26 @@ See `README.md` for setup, commands, configuration, and scheduling.
   are not deduplicated by content.
 - The first successful uncapped run writes `archive/_state.json`. Later runs
   inspect a seven-day overlap window; a full scan runs every 30 days or when
-  the camera list changes. Failed and capped runs do not advance the checkpoint.
+  the camera list or tag filter changes. Failed and capped runs do not advance
+  the checkpoint. `SPYPOINT_TAGS=buck` archives only photos with that API tag.
   The one-shot job is designed to be invoked by a host scheduler, such as cron.
 
 ## Local status (2026-10-23)
 
-- A live one-photo trial saved a JPEG and JSON sidecar; a repeat run skipped its
-  download. Only one photo has been archived locally so far.
+- An earlier live one-photo trial saved a JPEG and JSON sidecar; a repeat run
+  skipped its download. A second one-photo trial with `SPYPOINT_TAGS=buck` saved
+  one buck-tagged image. The older non-buck trial photo remains in `archive/`.
+- The account currently lists 13 cameras. A read-only date search on 2026-10-23
+  found the oldest photo returned across them dated 2025-10-24 UTC. SPYPOINT's
+  published Insiders Club benefit is 12 months of gallery history.
 - `archive/_state.json` does not exist yet because no uncapped full archive has
   completed. The next uncapped run will scan the available history and may
   download many photos. Run it with `docker compose run --rm spypoint-archive`
   when the user wants to initialize the full archive.
 - The source is forked to `jankar86/pyspypoint`; the local `origin` remote points
   there and `upstream` points to `hstern/pyspypoint`.
-- The Linux x86-64 image is published publicly on Docker Hub as
-  `jankar/pyspypoint:0.1.0` and `jankar/pyspypoint:latest`.
+- The Linux x86-64 image with the tag filter is published publicly on Docker
+  Hub as `jankar/pyspypoint:0.2.0` and `jankar/pyspypoint:latest`.
 
 ## Verification and handling notes
 
