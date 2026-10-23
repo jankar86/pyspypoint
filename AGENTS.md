@@ -42,11 +42,10 @@ See `README.md` for setup, commands, configuration, and scheduling.
   completed. The next uncapped run will scan the available history and may
   download many photos. Run it with `docker compose run --rm spypoint-archive`
   when the user wants to initialize the full archive.
-- The repository changes for Docker, archive, and documentation are present in
-  the working tree; check `git status` before committing or changing them.
+- The source is forked to `jankar86/pyspypoint`; the local `origin` remote points
+  there and `upstream` points to `hstern/pyspypoint`.
 - The Linux x86-64 image is published publicly on Docker Hub as
-  `jankar/pyspypoint:0.1.0` and `jankar/pyspypoint:latest`. The GitHub fork has
-  not been created yet; the upstream remote is `hstern/pyspypoint`.
+  `jankar/pyspypoint:0.1.0` and `jankar/pyspypoint:latest`.
 
 ## Verification and handling notes
 

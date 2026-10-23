@@ -1,5 +1,9 @@
 # pyspypoint
 
+This is a fork of [hstern/pyspypoint](https://github.com/hstern/pyspypoint).
+The archiver source is at [jankar86/pyspypoint](https://github.com/jankar86/pyspypoint),
+and the deployable image is at [jankar/pyspypoint on Docker Hub](https://hub.docker.com/r/jankar/pyspypoint).
+
 `pyspypoint` is an unofficial Python client for the SPYPOINT Cloud API. It logs in
 with a SPYPOINT account, lists the account's cameras, retrieves recent photo
 metadata, and builds download URLs from the photo data. It can also list the
