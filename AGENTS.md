@@ -50,6 +50,8 @@ See `README.md` for setup, commands, configuration, and scheduling.
   `jankar/pyspypoint:0.1.0` and `jankar/pyspypoint:latest`.
 - The optional gallery uses `gtstef/filebrowser:stable` with `archive/` mounted
   read-only and `gallery-data/` mounted at `/data` for its SQLite database.
+  `gallery-config.yaml` disables built-in authentication; the user plans to put
+  authentication on a proxy. Keep direct access to the gallery port restricted.
 
 ## Verification and handling notes
 

@@ -173,20 +173,23 @@ settings](https://docs.unraid.net/unraid-os/using-unraid-to/run-docker-container
 For a lightweight web view, run [FileBrowser Quantum](https://filebrowserquantum.com/en/docs/getting-started/docker/)
 as a separate container. It provides image thumbnails and a file viewer. The
 archive is mounted read-only, so browsing cannot change the saved photos or
-metadata. Its account database lives in a separate persistent folder.
+metadata. The example gallery has no built-in login; put authentication on your
+reverse proxy and make sure visitors cannot reach the gallery port directly.
+Its database lives in a separate persistent folder.
 
 From this checkout, start the optional gallery with:
 
 ```sh
 mkdir -p gallery-data
 docker compose --profile gallery up -d spypoint-gallery
-docker compose logs spypoint-gallery
 ```
 
-The first-run logs contain the randomly generated admin password. Open
-`http://localhost:8080`, sign in, and browse by camera folder. The local Compose
+Open `http://localhost:8080` and browse by camera folder. The local Compose
 port is bound to `127.0.0.1` so it is available only on the Docker host unless
-you forward the port.
+you forward the port. To use a browser on another device on your LAN, set
+`SPYPOINT_GALLERY_BIND` in `.env` to the Docker host's LAN IP, recreate the
+gallery, and open `http://<host-lan-ip>:8080`. When you add proxy authentication,
+restrict direct access to port 8080 so requests must pass through the proxy.
 
 On Unraid, add a second container using `gtstef/filebrowser:stable` with bridge
 networking, container port `80` mapped to a free host port such as `8080`, and
@@ -196,15 +199,18 @@ these path mappings:
 | --- | --- | --- |
 | `/mnt/user/appdata/pyspypoint/archive` | `/srv` | Read-only |
 | `/mnt/user/appdata/pyspypoint/gallery-data` | `/data` | Read/write |
+| `/mnt/user/appdata/pyspypoint/gallery-config.yaml` | `/config/config.yaml` | Read-only |
 
 Create `gallery-data` with write permission for the gallery container's user;
 the [official image](https://filebrowserquantum.com/en/docs/getting-started/docker/)
 uses UID/GID 1000 by default. If using Unraid's `nobody:users` ownership, set
 Extra Parameters to `--user 99:100` and make `gallery-data` writable by that
 user. Set the environment variable `FILEBROWSER_DATABASE_PATH` to
-`/data/database.sqlite`. Find the initial admin password in the gallery
-container logs. Keep the gallery on your LAN or behind your usual authenticated
-remote access.
+`/data/database.sqlite` and `FILEBROWSER_CONFIG` to `/config/config.yaml`.
+Copy this repository's `gallery-config.yaml` to the host path above. The file
+enables [no-auth mode](https://filebrowserquantum.com/en/docs/configuration/authentication/noauth/),
+so configure your authenticated proxy before exposing this service outside your
+trusted network, and prevent clients from bypassing the proxy.
 
 This is a file gallery: it shows the images and lets you open each JSON sidecar,
 but it does not turn SPYPOINT tags or timestamps into searchable photo filters.

@@ -26,11 +26,13 @@ services:
     profiles: ["gallery"]
     image: gtstef/filebrowser:stable
     environment:
+      FILEBROWSER_CONFIG: /config/config.yaml
       FILEBROWSER_DATABASE_PATH: /data/database.sqlite
     ports:
-      - "127.0.0.1:8080:80"
+      - "${SPYPOINT_GALLERY_BIND:-127.0.0.1}:8080:80"
     volumes:
       - ./archive:/srv:ro
       - ./gallery-data:/data
+      - ./gallery-config.yaml:/config/config.yaml:ro
     user: "${ARCHIVE_UID:-1000}:${ARCHIVE_GID:-1000}"
     restart: unless-stopped
