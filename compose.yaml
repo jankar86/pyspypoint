@@ -1,0 +1,24 @@
+services:
+  spypoint-smoke-test:
+    build: .
+    command: ["python", "smoke_test.py"]
+    env_file: .env
+  spypoint-archive:
+    build: .
+    command: ["python", "archive.py"]
+    env_file: .env
+    environment:
+      SPYPOINT_ARCHIVE_DIR: /archive
+    user: "${ARCHIVE_UID:-1000}:${ARCHIVE_GID:-1000}"
+    volumes:
+      - ./archive:/archive
+  spypoint-poller:
+    profiles: ["poller"]
+    build: .
+    env_file: .env
+    environment:
+      SPYPOINT_ARCHIVE_DIR: /archive
+    user: "${ARCHIVE_UID:-1000}:${ARCHIVE_GID:-1000}"
+    volumes:
+      - ./archive:/archive
+    restart: unless-stopped

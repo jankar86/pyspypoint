@@ -1,0 +1,7 @@
+*
+!spypoint/
+!spypoint/*.py
+!spypoint/py.typed
+!smoke_test.py
+!archive.py
+!poller.py
