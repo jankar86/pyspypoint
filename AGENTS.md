@@ -15,8 +15,6 @@ Unraid. Compose provides two one-shot jobs and an optional poller:
   stores a JSON sidecar under `archive/<camera-id>/`.
 - `spypoint-poller` runs the archive immediately and then every six hours by
   default. Start it with `docker compose --profile poller up -d spypoint-poller`.
-- `spypoint-gallery` optionally runs FileBrowser Quantum against the archive
-  mounted read-only. Its account database persists in `gallery-data/`.
 
 See `README.md` for setup, commands, configuration, and scheduling.
 
@@ -48,10 +46,6 @@ See `README.md` for setup, commands, configuration, and scheduling.
   there and `upstream` points to `hstern/pyspypoint`.
 - The Linux x86-64 image is published publicly on Docker Hub as
   `jankar/pyspypoint:0.1.0` and `jankar/pyspypoint:latest`.
-- The optional gallery uses `gtstef/filebrowser:stable` with `archive/` mounted
-  read-only and `gallery-data/` mounted at `/data` for its SQLite database.
-  `gallery-config.yaml` disables built-in authentication; the user plans to put
-  authentication on a proxy. Keep direct access to the gallery port restricted.
 
 ## Verification and handling notes
 

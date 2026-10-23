@@ -7,9 +7,9 @@ and the deployable image is at [jankar/pyspypoint on Docker Hub](https://hub.doc
 `pyspypoint` is an unofficial Python client for the SPYPOINT Cloud API. It logs in
 with a SPYPOINT account, lists the account's cameras, retrieves recent photo
 metadata, and builds download URLs from the photo data. It can also list the
-species tags available to the account. This repository is a client library; the
-container below is a one-shot check of the library, not a web service or a
-continuous photo downloader.
+species tags available to the account. The container runs a photo archive
+poller by default: it downloads images and metadata to a mounted directory.
+The optional Compose smoke test checks API access without saving photos.
 
 ## Use the Python library
 
@@ -167,51 +167,3 @@ platform. The `latest` tag points to the same image as `0.1.0`.
 
 Unraid supports these volume and environment mappings in its [container
 settings](https://docs.unraid.net/unraid-os/using-unraid-to/run-docker-containers/managing-and-customizing-containers/).
-
-## Browse the archived photos
-
-For a lightweight web view, run [FileBrowser Quantum](https://filebrowserquantum.com/en/docs/getting-started/docker/)
-as a separate container. It provides image thumbnails and a file viewer. The
-archive is mounted read-only, so browsing cannot change the saved photos or
-metadata. The example gallery has no built-in login; put authentication on your
-reverse proxy and make sure visitors cannot reach the gallery port directly.
-Its database lives in a separate persistent folder.
-
-From this checkout, start the optional gallery with:
-
-```sh
-mkdir -p gallery-data
-docker compose --profile gallery up -d spypoint-gallery
-```
-
-Open `http://localhost:8080` and browse by camera folder. The local Compose
-port is bound to `127.0.0.1` so it is available only on the Docker host unless
-you forward the port. To use a browser on another device on your LAN, set
-`SPYPOINT_GALLERY_BIND` in `.env` to the Docker host's LAN IP, recreate the
-gallery, and open `http://<host-lan-ip>:8080`. When you add proxy authentication,
-restrict direct access to port 8080 so requests must pass through the proxy.
-
-On Unraid, add a second container using `gtstef/filebrowser:stable` with bridge
-networking, container port `80` mapped to a free host port such as `8080`, and
-these path mappings:
-
-| Host path | Container path | Mode |
-| --- | --- | --- |
-| `/mnt/user/appdata/pyspypoint/archive` | `/srv` | Read-only |
-| `/mnt/user/appdata/pyspypoint/gallery-data` | `/data` | Read/write |
-| `/mnt/user/appdata/pyspypoint/gallery-config.yaml` | `/config/config.yaml` | Read-only |
-
-Create `gallery-data` with write permission for the gallery container's user;
-the [official image](https://filebrowserquantum.com/en/docs/getting-started/docker/)
-uses UID/GID 1000 by default. If using Unraid's `nobody:users` ownership, set
-Extra Parameters to `--user 99:100` and make `gallery-data` writable by that
-user. Set the environment variable `FILEBROWSER_DATABASE_PATH` to
-`/data/database.sqlite` and `FILEBROWSER_CONFIG` to `/config/config.yaml`.
-Copy this repository's `gallery-config.yaml` to the host path above. The file
-enables [no-auth mode](https://filebrowserquantum.com/en/docs/configuration/authentication/noauth/),
-so configure your authenticated proxy before exposing this service outside your
-trusted network, and prevent clients from bypassing the proxy.
-
-This is a file gallery: it shows the images and lets you open each JSON sidecar,
-but it does not turn SPYPOINT tags or timestamps into searchable photo filters.
-That would call for a dedicated viewer reading the sidecars.

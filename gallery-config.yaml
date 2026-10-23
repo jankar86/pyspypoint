@@ -1,9 +1,0 @@
-http:
-  port: 80
-  baseURL: "/"
-server:
-  sources:
-    - path: "/srv"
-auth:
-  methods:
-    noauth: true
