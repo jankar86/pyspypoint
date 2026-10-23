@@ -5,3 +5,4 @@ pyspypoint.egg-info/
 __pycache__
 .env
 archive/
+gallery-data/

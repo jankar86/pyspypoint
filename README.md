@@ -167,3 +167,45 @@ platform. The `latest` tag points to the same image as `0.1.0`.
 
 Unraid supports these volume and environment mappings in its [container
 settings](https://docs.unraid.net/unraid-os/using-unraid-to/run-docker-containers/managing-and-customizing-containers/).
+
+## Browse the archived photos
+
+For a lightweight web view, run [FileBrowser Quantum](https://filebrowserquantum.com/en/docs/getting-started/docker/)
+as a separate container. It provides image thumbnails and a file viewer. The
+archive is mounted read-only, so browsing cannot change the saved photos or
+metadata. Its account database lives in a separate persistent folder.
+
+From this checkout, start the optional gallery with:
+
+```sh
+mkdir -p gallery-data
+docker compose --profile gallery up -d spypoint-gallery
+docker compose logs spypoint-gallery
+```
+
+The first-run logs contain the randomly generated admin password. Open
+`http://localhost:8080`, sign in, and browse by camera folder. The local Compose
+port is bound to `127.0.0.1` so it is available only on the Docker host unless
+you forward the port.
+
+On Unraid, add a second container using `gtstef/filebrowser:stable` with bridge
+networking, container port `80` mapped to a free host port such as `8080`, and
+these path mappings:
+
+| Host path | Container path | Mode |
+| --- | --- | --- |
+| `/mnt/user/appdata/pyspypoint/archive` | `/srv` | Read-only |
+| `/mnt/user/appdata/pyspypoint/gallery-data` | `/data` | Read/write |
+
+Create `gallery-data` with write permission for the gallery container's user;
+the [official image](https://filebrowserquantum.com/en/docs/getting-started/docker/)
+uses UID/GID 1000 by default. If using Unraid's `nobody:users` ownership, set
+Extra Parameters to `--user 99:100` and make `gallery-data` writable by that
+user. Set the environment variable `FILEBROWSER_DATABASE_PATH` to
+`/data/database.sqlite`. Find the initial admin password in the gallery
+container logs. Keep the gallery on your LAN or behind your usual authenticated
+remote access.
+
+This is a file gallery: it shows the images and lets you open each JSON sidecar,
+but it does not turn SPYPOINT tags or timestamps into searchable photo filters.
+That would call for a dedicated viewer reading the sidecars.

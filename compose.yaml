@@ -22,3 +22,15 @@ services:
     volumes:
       - ./archive:/archive
     restart: unless-stopped
+  spypoint-gallery:
+    profiles: ["gallery"]
+    image: gtstef/filebrowser:stable
+    environment:
+      FILEBROWSER_DATABASE_PATH: /data/database.sqlite
+    ports:
+      - "127.0.0.1:8080:80"
+    volumes:
+      - ./archive:/srv:ro
+      - ./gallery-data:/data
+    user: "${ARCHIVE_UID:-1000}:${ARCHIVE_GID:-1000}"
+    restart: unless-stopped
