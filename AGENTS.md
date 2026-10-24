@@ -22,9 +22,10 @@ See `README.md` for setup, commands, configuration, and scheduling.
 
 - Image preference is HD, then large, medium, small. The job does not request
   new Full-HD uploads from SPYPOINT.
-- The sidecar keeps photo metadata, available variants, chosen image filename,
-  byte count, SHA-256 hash, and download time. Signed URLs and access paths are
-  excluded.
+- The sidecar keeps photo metadata, the current camera display name in
+  `camera_name`, SPYPOINT labels in `photo.tag`, available variants, chosen
+  image filename, byte count, SHA-256 hash, and download time. These are not
+  embedded in image EXIF. Signed URLs and access paths are excluded.
 - A rerun skips downloading when the sidecar points to a nonempty file for the
   current best variant. It still refreshes metadata. A later HD variant is
   downloaded and the older image is retained. Images under distinct photo IDs
@@ -38,8 +39,9 @@ See `README.md` for setup, commands, configuration, and scheduling.
 ## Local status (2026-10-23)
 
 - An earlier live one-photo trial saved a JPEG and JSON sidecar; a repeat run
-  skipped its download. A second one-photo trial with `SPYPOINT_TAGS=buck` saved
-  one buck-tagged image. The older non-buck trial photo remains in `archive/`.
+  skipped its download. Later one-photo trials with `SPYPOINT_TAGS=buck` saved
+  buck-tagged images. The older non-buck trial photo remains in `archive/`.
+  The latest buck trial verified `camera_name` in its JSON sidecar.
 - The account currently lists 13 cameras. A read-only date search on 2026-10-23
   found the oldest photo returned across them dated 2025-10-24 UTC. SPYPOINT's
   published Insiders Club benefit is 12 months of gallery history.
@@ -49,8 +51,9 @@ See `README.md` for setup, commands, configuration, and scheduling.
   when the user wants to initialize the full archive.
 - The source is forked to `jankar86/pyspypoint`; the local `origin` remote points
   there and `upstream` points to `hstern/pyspypoint`.
-- The Linux x86-64 image with the tag filter is published publicly on Docker
-  Hub as `jankar/pyspypoint:0.2.0` and `jankar/pyspypoint:latest`.
+- The Linux x86-64 image with the tag filter and camera-name metadata is
+  published publicly on Docker Hub as `jankar/pyspypoint:0.2.1` and
+  `jankar/pyspypoint:latest`.
 
 ## Verification and handling notes
 

@@ -66,9 +66,13 @@ The archive job downloads the highest resolution **currently available** for
 each photo: HD when the response includes an HD file, otherwise large, medium,
 or small. It saves images and JSON metadata sidecars under `./archive/<camera-id>/`.
 For example, a photo may produce `<photo-id>.large.jpg` and `<photo-id>.json`.
-The JSON contains the photo ID, camera ID, timestamps, original filename and
-size, tags, available image variants, and the saved file's SHA-256 hash and byte
-count. Signed download paths are omitted from the JSON because they expire.
+The JSON contains the photo ID, camera ID, camera display name, timestamps,
+original filename and size, SPYPOINT tags, available image variants, and the
+saved file's SHA-256 hash and byte count. The camera name is saved as
+`camera_name`; SPYPOINT's labels are in `photo.tag`. These values are in the
+JSON sidecar, not embedded in the image's EXIF metadata or filename. Folders
+use stable camera IDs so renaming a camera does not move its existing photos.
+Signed download paths are omitted from the JSON because they expire.
 
 Start with a small trial:
 
@@ -157,7 +161,7 @@ Add a container in Unraid's Docker page with these settings:
 
 | Setting | Value |
 | --- | --- |
-| Repository | `jankar/pyspypoint:0.2.0` ([Docker Hub](https://hub.docker.com/r/jankar/pyspypoint)) |
+| Repository | `jankar/pyspypoint:0.2.1` ([Docker Hub](https://hub.docker.com/r/jankar/pyspypoint)) |
 | Network | Bridge; no port mappings |
 | Host path | `/mnt/user/appdata/pyspypoint/archive` |
 | Container path | `/archive` (read/write) |
@@ -171,7 +175,7 @@ archive immediately, and keeps the checkpoint in `/archive/_state.json`. Set
 the container to auto-start to resume polling after a reboot. The initial
 uncapped run can download the whole history currently exposed by SPYPOINT.
 The published image currently targets Linux x86-64, which is the usual Unraid
-platform. The `latest` tag points to the same image as `0.2.0`.
+platform. The `latest` tag points to the same image as `0.2.1`.
 
 Unraid supports these volume and environment mappings in its [container
 settings](https://docs.unraid.net/unraid-os/using-unraid-to/run-docker-containers/managing-and-customizing-containers/).

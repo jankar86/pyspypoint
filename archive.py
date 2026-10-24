@@ -148,7 +148,7 @@ def download(session, url, directory, stem):
             temporary.unlink(missing_ok=True)
 
 
-def archive_photo(client, photo, root):
+def archive_photo(client, photo, root, camera_name=None):
     camera_id = identifier(photo.camera)
     photo_id = identifier(photo.id)
     variants = available_variants(photo)
@@ -173,6 +173,8 @@ def archive_photo(client, photo, root):
         downloaded = True
     document = {"photo": metadata(photo), "available_variants": variants,
                 "archive": archive}
+    if camera_name:
+        document["camera_name"] = camera_name
     write_json(sidecar, document)
     return downloaded
 
@@ -183,6 +185,10 @@ def run(client, root, page_size, max_photos, cutoff=None, cameras=None, tags=())
     print(f"Cameras: {len(cameras)}")
     if not cameras:
         return 0
+    camera_names = {
+        camera.id: getattr(getattr(camera, "config", None), "name", None)
+        for camera in cameras
+    }
     root.mkdir(parents=True, exist_ok=True)
     cursor = "2100-01-01T00:00:00.000Z"
     seen = set()
@@ -203,7 +209,8 @@ def run(client, root, page_size, max_photos, cutoff=None, cameras=None, tags=())
                 continue
             seen.add(photo.id)
             try:
-                if archive_photo(client, photo, root):
+                if archive_photo(client, photo, root,
+                                 camera_names.get(photo.camera)):
                     downloaded += 1
                 else:
                     skipped += 1

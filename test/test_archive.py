@@ -41,9 +41,11 @@ class FakeClient:
         self.session = FakeSession()
         self.photo_calls = 0
         self.camera_ids = ["camera-1"]
+        self.camera_name = "North Ridge"
 
     def cameras(self):
-        return [spypoint.Camera(camera_id) for camera_id in self.camera_ids]
+        return [spypoint.Camera(camera_id, config={"name": self.camera_name})
+                for camera_id in self.camera_ids]
 
     def photos(self, cameras, date_end, limit, tags=()):
         self.photo_calls += 1
@@ -77,12 +79,15 @@ class TestArchive(unittest.TestCase):
             data = json.loads(sidecar.read_text())
             self.assertEqual("large", data["archive"]["variant"])
             self.assertEqual(["deer"], data["photo"]["tag"])
+            self.assertEqual("North Ridge", data["camera_name"])
             self.assertNotIn("signature", sidecar.read_text())
             self.assertTrue((root / "camera-1" / "photo-3.large.jpg").exists())
 
+            client.camera_name = "South Ridge"
             with contextlib.redirect_stdout(io.StringIO()):
                 self.assertEqual(0, archive.run(client, root, page_size=2, max_photos=0))
             self.assertEqual(3, len(client.session.downloads))
+            self.assertEqual("South Ridge", json.loads(sidecar.read_text())["camera_name"])
 
             items[0].hd = spypoint.Photo(hd={"host": "images.example",
                                             "path": "hd?signature=secret"}).hd
