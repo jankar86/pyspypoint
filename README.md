@@ -150,10 +150,12 @@ image uses the poller as its default command; the one-shot Compose jobs override
 that command.
 
 The archive directory and `.env` are ignored by Git and excluded from the Docker
-build context. The archive container writes as UID/GID 1000 by default. On a
-host with a different account ID, set `ARCHIVE_UID` and `ARCHIVE_GID` in `.env`
-to the values from `id -u` and `id -g` before running it. Photo downloads need
-network access to the signed image hosts in addition to the SPYPOINT API.
+build context. The Compose archive services run as UID/GID 1000 by default. On
+a host with a different account ID, set `ARCHIVE_UID` and `ARCHIVE_GID` in
+`.env` to the values from `id -u` and `id -g` before running Compose. The
+published image itself runs as UID/GID 65532 unless Docker overrides its user.
+Photo downloads need network access to the signed image hosts in addition to
+the SPYPOINT API.
 
 ## Deploy the image on Unraid
 
@@ -163,17 +165,41 @@ Add a container in Unraid's Docker page with these settings:
 | --- | --- |
 | Repository | `jankar/pyspypoint:0.2.1` ([Docker Hub](https://hub.docker.com/r/jankar/pyspypoint)) |
 | Network | Bridge; no port mappings |
-| Host path | `/mnt/user/appdata/pyspypoint/archive` |
+| Host path | `/mnt/user/spypoint-archive` (example writable share) |
 | Container path | `/archive` (read/write) |
-| Environment | `SPYPOINT_USERNAME`, `SPYPOINT_PASSWORD` |
-| Optional environment | `SPYPOINT_TAGS=buck`, `SPYPOINT_POLL_HOURS=6`, `SPYPOINT_LOOKBACK_DAYS=7`, `SPYPOINT_FULL_SCAN_DAYS=30` |
+| Required environment | `SPYPOINT_USERNAME`, `SPYPOINT_PASSWORD` |
+| Buck-only environment | `SPYPOINT_TAGS=buck` |
+| Extra Parameters | `--user 99:100` if the share is writable by Unraid's `nobody:users` |
 
-Create the host directory first and give the container's user write access.
-For an Unraid share owned by `nobody:users`, set **Extra Parameters** to
-`--user 99:100`. The image starts the poller automatically, runs the first
-archive immediately, and keeps the checkpoint in `/archive/_state.json`. Set
-the container to auto-start to resume polling after a reboot. The initial
-uncapped run can download the whole history currently exposed by SPYPOINT.
+The image uses the default `python poller.py` command. It does not serve a web
+page, so it needs no port or WebUI setting. Add these environment variables in
+Unraid's container editor:
+
+| Variable | Value | Purpose |
+| --- | --- | --- |
+| `SPYPOINT_USERNAME` | Your SPYPOINT login email | Required |
+| `SPYPOINT_PASSWORD` | Your SPYPOINT password | Required |
+| `SPYPOINT_TAGS` | `buck` | Optional: download only photos tagged `buck`; omit to archive all photos |
+| `SPYPOINT_POLL_HOURS` | `6` (default) | Hours between runs, measured after each run finishes; valid range 0.25–168 |
+| `SPYPOINT_LOOKBACK_DAYS` | `7` (default) | Recent-photo overlap on normal polls |
+| `SPYPOINT_FULL_SCAN_DAYS` | `30` (default) | Interval for a complete metadata scan |
+
+Leave `SPYPOINT_ARCHIVE_DIR` unset: the image uses `/archive`. Also leave
+`SPYPOINT_MAX_PHOTOS` unset or set it to `0`; a cap prevents the full-run
+checkpoint from advancing. `SPYPOINT_PAGE_SIZE` defaults to 100 and usually
+needs no change. `SPYPOINT_FULL_SCAN=1` is only for a temporary forced scan.
+`PUID` and `PGID` are not read by this image; use Docker's `--user` parameter
+if the default UID/GID 65532 cannot write to the host path.
+
+Create the host directory first and give the container user write access. For
+a share owned by `nobody:users`, use **Extra Parameters** `--user 99:100`.
+The image starts the poller automatically, runs the first archive immediately,
+and keeps the checkpoint in `/archive/_state.json`. Set the container to
+auto-start to resume polling after a reboot. The initial uncapped run can
+download the whole history currently exposed by SPYPOINT. Check the logs for
+`Scan: full` and a final `errors: 0`, then confirm image files, JSON sidecars,
+and `_state.json` appear in the host share.
+
 The published image currently targets Linux x86-64, which is the usual Unraid
 platform. The `latest` tag points to the same image as `0.2.1`.
 
